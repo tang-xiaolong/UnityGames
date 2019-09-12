@@ -15,15 +15,29 @@ public class Manager : MonoBehaviour
     //4、打乱图片
     private Texture imageSource;
     private List<Element> pictures = new List<Element>();
-    private int size = 4;
+    private int size = 2;
     public Material material;
     public GameObject go;
     private Element emptyElement;
+    [SerializeField]
+    private int currentRightPosCount = 0;
+    private bool canMove = true;
+    
 
     public void Start()
     {
+        StartGame();
+    }
+    public void StartGame()
+    {
+        currentRightPosCount = 0;
         OpenFile();
         SliceImage(size);
+        RandomImage();
+    }
+    public bool CheckWin()
+    {
+        return currentRightPosCount == size * size;
     }
     //[MenuItem("Tools/OPen File", false, 1)]
     /// <summary>
@@ -82,17 +96,18 @@ public class Manager : MonoBehaviour
         {
             for (int i = 0; i < size; i++)
             {
-                //拿到第i块 https://connect.unity.com/p/bian-ji-qi-jiao-ben-zhi-zi-dong-hua-qie-ge-sprite
                 GameObject temp = Instantiate(go);
                 temp.name = i.ToString() + "  " + j.ToString();
                 //Material m = Instantiate(material);
                 Material m = new Material(material);
                 temp.transform.position = new Vector3(i + offset * i,j + offset * j,0);
                 temp.GetComponent<MeshRenderer>().material = m;
-                Element element = temp.AddComponent<Element>();
+                Element element = temp.GetComponent<Element>();
 
-                element.SetId((size - j) * size + i);
-                element.gameObject.GetComponent<Button>().onClick.AddListener(element.OnClick);
+                element.SetId(j * size + i);
+                element.SetPos(new Vector2(j,i));
+                element.firstPos = new Vector2(j,i);
+                //element.gameObject.GetComponent<Button>().onClick.AddListener(element.OnClick);
                 pictures.Add(element);
 
                 m.SetTexture("_MainTex", imageSource);//设置图片
@@ -102,13 +117,89 @@ public class Manager : MonoBehaviour
             }
         }
         pictures[size - 1].GetComponent<MeshFilter>().mesh = null;
+        emptyElement = pictures[size - 1];
     }
     public void RandomImage()
     {
         //随机交换两张图片的位置，交换多次即可
+        System.Random random = new System.Random();
+        for (int i = 0; i < pictures.Count; i++)
+        {
+            int index = random.Next(0,pictures.Count);
+            //交换位置
+            Vector3 pos = pictures[i].transform.position;
+            pictures[i].transform.position = pictures[index].transform.position;
+            pictures[index].transform.position = pos;
+        }
+        //统计当前有多少个是在正确的位置上
+        foreach (var item in pictures)
+        {
+            if (item.IsInRightPos(item.GetPos()))
+                currentRightPosCount += 1;
+        }
+        //for (int i = 0; i < size; i++)
+        //{
+        //    for (int j = 0; j < size; j++)
+        //    {
+        //        pictures[i * size + j].SetPos(new Vector2(i,j));
+        //        if (pictures[i * size + j].GetId() == (i * size + j))
+        //            currentRightPosCount += 1;
+        //    }
+        //}
     }
-    public void SwapElement()
+    public void SwapElement(Element a,Element b)
     {
-
+        //交换位置  
+        StartCoroutine(StartMove(a, b));
+    }
+    IEnumerator StartMove(Element a,Element b)
+    {
+        Vector3 pos = a.transform.position;
+        canMove = false;
+        while(Vector3.Distance(a.transform.position,b.transform.position) > 0.1f)
+        {
+            yield return new WaitForSeconds(Time.deltaTime);
+            a.transform.position = Vector3.Lerp(a.transform.position, b.transform.position,0.1f);//move
+        }
+        a.transform.position = b.transform.position;
+        b.transform.position = pos;
+        canMove = true;
+    }
+    public void Update()
+    {
+        if(canMove && Input.GetMouseButtonDown(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if(Physics.Raycast(ray,out hit))
+            {
+                //判断当前的与空的位置
+                int id = hit.collider.gameObject.GetComponent<Element>().GetId();
+                Element element = hit.collider.gameObject.GetComponent<Element>();
+                CheckClick(element);
+                Debug.Log(id);
+            }
+        }
+    }
+    public void CheckClick(Element element)
+    {
+        //如果这个位置在
+        Vector2 pos1 = element.GetPos();
+        Vector2 pos2 = emptyElement.GetPos();
+        if(Vector2.Distance(pos1,pos2) == 1)
+        {
+            Vector2 a = element.GetPos(),b = emptyElement.GetPos();
+            if(element.IsInRightPos(a))
+                currentRightPosCount -= 1;
+            else if (element.IsInRightPos(b))//移到了正确位置
+                currentRightPosCount += 1;
+            if (emptyElement.IsInRightPos(b))//原本在正确位置
+                currentRightPosCount -= 1;
+            else if (emptyElement.IsInRightPos(a))//移到了正确位置
+                currentRightPosCount += 1;
+            SwapElement(element, emptyElement);//交换
+            if (CheckWin())
+                Debug.Log("You are win!");
+        }
     }
 }

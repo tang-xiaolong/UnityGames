@@ -7,19 +7,28 @@ public class Element : MonoBehaviour
 {
     [SerializeField]
     private int id;
-    private int pos;
-    void Start()
+    private Vector2 pos;
+    public Vector2 firstPos { set; private get; }
+    public bool IsInRightPos(Vector2 position)
     {
-        
+        return position == firstPos;
     }
     
     public void SetId(int id)
     {
         this.id = id;
     }
-    public void SetPos(int pos)
+    public int GetId()
+    {
+        return id;
+    }
+    public void SetPos(Vector2 pos)
     {
         this.pos = pos;
+    }
+    public Vector2 GetPos()
+    {
+        return pos;
     }
     public void OnClick()
     {
