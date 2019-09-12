@@ -64,7 +64,6 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Element.cs" />
     <Compile Include="Assets\Scripts\Manager.cs" />
-    <Compile Include="Assets\Scripts\TestSlice.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>D:/Unity/UnityGames/Jigsaw Puzzle/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>

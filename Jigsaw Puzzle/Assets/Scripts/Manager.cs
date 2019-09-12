@@ -15,12 +15,12 @@ public class Manager : MonoBehaviour
     //4、打乱图片
     private Texture imageSource;
     private List<Element> pictures = new List<Element>();
-    private int size = 2;
+    private int size = 6;
     public Material material;
     public GameObject go;
     private Element emptyElement;
     [SerializeField]
-    private int currentRightPosCount = 0;
+    private int currentRightPosCount = 0;//当前在正确位置上的拼图数目
     private bool canMove = true;
     
 
@@ -92,9 +92,9 @@ public class Manager : MonoBehaviour
         float delta = 1.0f / size;
         float offset = 0.05f;
         //取较小的一个，并均分为n块
-        for (int j = 0; j < size; j++)
+        for (int i = 0; i < size; i++)
         {
-            for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
             {
                 GameObject temp = Instantiate(go);
                 temp.name = i.ToString() + "  " + j.ToString();
@@ -105,8 +105,8 @@ public class Manager : MonoBehaviour
                 Element element = temp.GetComponent<Element>();
 
                 element.SetId(j * size + i);
-                element.SetPos(new Vector2(j,i));
-                element.firstPos = new Vector2(j,i);
+                element.SetPos(new Vector2(i,j));
+                element.firstPos = new Vector2(i,j);
                 //element.gameObject.GetComponent<Button>().onClick.AddListener(element.OnClick);
                 pictures.Add(element);
 
@@ -116,8 +116,8 @@ public class Manager : MonoBehaviour
                 //Debug.Log(m.GetTextureOffset("_MainTex")+"  "+ new Vector2(delta * i, delta * j));
             }
         }
-        pictures[size - 1].GetComponent<MeshFilter>().mesh = null;
-        emptyElement = pictures[size - 1];
+        pictures[size * size - 1].GetComponent<MeshFilter>().mesh = null;
+        emptyElement = pictures[size * size - 1];
     }
     public void RandomImage()
     {
@@ -130,6 +130,7 @@ public class Manager : MonoBehaviour
             Vector3 pos = pictures[i].transform.position;
             pictures[i].transform.position = pictures[index].transform.position;
             pictures[index].transform.position = pos;
+            SwapPos(pictures[index],pictures[i]);
         }
         //统计当前有多少个是在正确的位置上
         foreach (var item in pictures)
@@ -137,15 +138,6 @@ public class Manager : MonoBehaviour
             if (item.IsInRightPos(item.GetPos()))
                 currentRightPosCount += 1;
         }
-        //for (int i = 0; i < size; i++)
-        //{
-        //    for (int j = 0; j < size; j++)
-        //    {
-        //        pictures[i * size + j].SetPos(new Vector2(i,j));
-        //        if (pictures[i * size + j].GetId() == (i * size + j))
-        //            currentRightPosCount += 1;
-        //    }
-        //}
     }
     public void SwapElement(Element a,Element b)
     {
@@ -159,11 +151,19 @@ public class Manager : MonoBehaviour
         while(Vector3.Distance(a.transform.position,b.transform.position) > 0.1f)
         {
             yield return new WaitForSeconds(Time.deltaTime);
-            a.transform.position = Vector3.Lerp(a.transform.position, b.transform.position,0.1f);//move
+            a.transform.position = Vector3.Lerp(a.transform.position, b.transform.position,0.2f);//move
         }
         a.transform.position = b.transform.position;
         b.transform.position = pos;
+        SwapPos(a, b);
         canMove = true;
+    }
+    public void SwapPos(Element a,Element b)
+    {
+        Vector2 temp = a.GetPos();
+        a.SetPos(b.GetPos());
+        b.SetPos(temp);
+        
     }
     public void Update()
     {
@@ -186,6 +186,7 @@ public class Manager : MonoBehaviour
         //如果这个位置在
         Vector2 pos1 = element.GetPos();
         Vector2 pos2 = emptyElement.GetPos();
+        Debug.Log(pos1+"  "+pos2+"  "+ Vector2.Distance(pos1, pos2));
         if(Vector2.Distance(pos1,pos2) == 1)
         {
             Vector2 a = element.GetPos(),b = emptyElement.GetPos();

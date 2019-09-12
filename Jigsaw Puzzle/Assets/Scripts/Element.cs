@@ -24,6 +24,7 @@ public class Element : MonoBehaviour
     }
     public void SetPos(Vector2 pos)
     {
+
         this.pos = pos;
     }
     public Vector2 GetPos()
