@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Create : MonoBehaviour {
-	static public int N = 5;
+	static public int N = 4;
 	static public int M = 13;
 	int[,] Map = new int[N,N];
 	private bool isWin = false;
@@ -11,9 +12,32 @@ public class Create : MonoBehaviour {
 	public GameObject[,] images = new GameObject[N,N];//保存所有的精灵
 	private Sprite[] sprites;//这是资源
 	public GameObject num;//加载预设
+
+    public Transform bg;
+    public GameObject resPanel;
+    public Button reStart;
+    public Button quit;
+    public Text resultInfo;
+
+    private void ReStart()
+    {
+        SceneManager.LoadScene("main");
+    }
+    private void QuitGame()
+    {
+        Application.Quit();
+    }
 	public void Init()
 	{
-		sprites = Resources.LoadAll<Sprite>("number");
+        //hide result panel
+        if(resPanel != null)
+            resPanel.SetActive(false);
+        if(reStart != null)
+            reStart.onClick.AddListener(ReStart);
+        if(quit != null)
+            quit.onClick.AddListener(QuitGame);
+
+		sprites = Resources.LoadAll<Sprite>("numbers");
 		Debug.Log(sprites.Length);
 		int n = 2;
 		for (int i = 0; i < N; ++i)
@@ -30,8 +54,10 @@ public class Create : MonoBehaviour {
 		{
 			for (int j = 0; j < N; j++)
 			{
-				GameObject go = Instantiate(num);
-				go.transform.position = new Vector3(0.5f * j, -0.5f * i, 0)+new Vector3(-0.5f*(N/2), 0.5f * (N / 2), 0);
+				GameObject go = Instantiate(num,bg);
+                //go.transform.position = new Vector3(0.5f * j, -0.5f * i, 0)+new Vector3(-0.5f*(N/2), 0.5f * (N / 2), 0);
+                (go.transform as RectTransform).anchoredPosition = new Vector3(128f * j, -128 * i, 0) + new Vector3(3.0f*j,-3.0f*i,0) + new Vector3(18,-12,0);
+				//go.transform.localPosition = new Vector3(128f * j, -128 * i, 0)+new Vector3(-128f*(N/2), 128 * (N / 2), 0);
 				go.name = i.ToString() + "  " + j.ToString();
 				images[i, j] = go;
 			}
@@ -304,7 +330,8 @@ public class Create : MonoBehaviour {
 			//Debug.Log(i+"  : "+Map[i,0]+"  "+Map[i, 1] + "  " + Map[i, 2] + "  " + Map[i, 3] + "  " + Map[i, 4]);
 			for(int j = 0;j < N;++j)
 			{
-				images[i, j].GetComponent<SpriteRenderer>().sprite = sprites[Map[i,j]];
+				//images[i, j].GetComponent<SpriteRenderer>().sprite = sprites[Map[i,j]];
+				images[i, j].GetComponent<Image>().sprite = sprites[Map[i,j]];
 			}
 		}
 	}
@@ -372,10 +399,12 @@ public class Create : MonoBehaviour {
 		
 		if (isWin)//如果胜利了，显示胜利界面
 		{
+            Win();
 			return;
 		}
 		else if(isLose)//失败了
 		{
+            Lose();
 			return;
 		}
 		else
@@ -383,6 +412,20 @@ public class Create : MonoBehaviour {
 			Run();
 		}
 	}
+    private void Win()
+    {
+        if (resPanel != null)
+            resPanel.SetActive(true);
+        if (resultInfo != null)
+            resultInfo.text = "恭喜你获胜了！";
+    }
 
+    private void Lose()
+    {
+        if (resPanel != null)
+            resPanel.SetActive(true);
+        if (resultInfo != null)
+            resultInfo.text = "很遗憾你输了~重新战斗吧！";
+    }
 	
 }
